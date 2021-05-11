@@ -7,7 +7,7 @@ const server = createServer();
 server.listen(port);
 console.log(`Server listening on port ${port}`);
 
-const clientURL = 'https://pop-io-client.herokuapp.com/'; //'http://localhost:8080'
+const clientURL = 'https://pop-io-client.herokuapp.com'; //'http://localhost:8080'
 const io = new Server(server, {
   cors: {
     origin: clientURL,
