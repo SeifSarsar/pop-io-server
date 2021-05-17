@@ -40,13 +40,6 @@ export default class Vector {
     this.dY *= length / oldLength;
   }
 
-  resize(length: number) {
-    const oldLength = this.getLength();
-
-    this.dX = (this.dX * length) / oldLength;
-    this.dY = (this.dY * length) / oldLength;
-  }
-
   getLength() {
     return Math.sqrt(this.dX * this.dX + this.dY * this.dY);
   }

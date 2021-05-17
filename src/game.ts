@@ -2,6 +2,7 @@ import { Direction, Skill } from './enum';
 import { Socket } from 'socket.io';
 import {
   BOT_NAMES,
+  GAME_BOT_CAPACITY,
   GAME_DIMENSION,
   N_ENERGY,
   TRIANGLE_WALL_SIZE,
@@ -19,10 +20,16 @@ export default class Game {
     this.createWalls();
     this.createEnergies();
 
-    setInterval(this.update.bind(this), 1000 / 60);
+    this.updateInterval = setInterval(this.update.bind(this), 1000 / 60);
 
-    setInterval(this.updateLeaderboard.bind(this), 3000);
+    this.leaderboardInterval = setInterval(
+      this.updateLeaderboard.bind(this),
+      3000
+    );
   }
+
+  updateInterval: NodeJS.Timeout;
+  leaderboardInterval: NodeJS.Timeout;
 
   private state = new State();
   private controller = new Controller();
@@ -41,11 +48,28 @@ export default class Game {
 
   private skillListener = this.skill.bind(this);
 
+  private nPlayers = 0;
+  private nBots = 0;
+
+  private watchers: Map<string, Player> = new Map();
+
   update() {
     this.state.globes.forEach((globe: Globe) => {
       if (globe.update()) {
-        this.state.globes.delete(globe.id);
-        this.addBots(1); //replace killed bot
+        if (globe instanceof Player) {
+          this.leave(globe.id);
+          this.watchers.set(globe.id, globe);
+        } else if (globe instanceof Bot) {
+          this.state.globes.delete(globe.id);
+          this.nBots--;
+        }
+        if (this.nBots < GAME_BOT_CAPACITY) {
+          //Repopulate bots
+          const spots = 1 + GAME_BOT_CAPACITY - this.nPlayers - this.nBots;
+          if (spots > 0) {
+            this.addBots(spots);
+          }
+        }
       }
     });
 
@@ -61,6 +85,10 @@ export default class Game {
 
     this.state.splashes.forEach((splash, index) => {
       if (splash.update()) this.state.splashes.splice(index, 1);
+    });
+
+    this.watchers.forEach((watcher) => {
+      watcher.update();
     });
   }
 
@@ -89,7 +117,7 @@ export default class Game {
       if (globe instanceof Player) {
         for (const leaderboardGlobe of leaderboardGlobes) {
           if (globe.id === leaderboardGlobe.id) {
-            globe.emit('leaderboard', leaderboardGlobes);
+            globe.socket?.emit('leaderboard', leaderboardGlobes);
             return;
           }
         }
@@ -97,7 +125,7 @@ export default class Game {
         //Add player to leaderboard
         for (let i = 4; i < sortedGlobes.length; i++) {
           if (globe.id === sortedGlobes[i].id) {
-            globe.emit('leaderboard', [
+            globe.socket?.emit('leaderboard', [
               ...leaderboardGlobes,
               globe.serializeLeaderboard(i + 1),
             ]);
@@ -285,6 +313,7 @@ export default class Game {
   }
 
   addPlayer(
+    roomId: string,
     socket: Socket,
     username: string,
     screenWidth: number,
@@ -303,8 +332,9 @@ export default class Game {
     this.state.globes.set(socket.id, player);
     const state = player.getNearbyObjects();
 
-    player.emit(
+    player.socket?.emit(
       'start',
+      roomId,
       player.createUpdate(
         state.globes,
         state.bullets,
@@ -313,6 +343,7 @@ export default class Game {
         state.splashes
       )
     );
+    this.nPlayers++;
   }
 
   addBots(n: number) {
@@ -322,10 +353,19 @@ export default class Game {
       const bot = new Bot(id, username, this.state);
       this.state.globes.set(id, bot);
     }
+    this.nBots += n;
+  }
+
+  getNBots() {
+    return this.nBots;
+  }
+
+  getNGlobes() {
+    return this.state.globes.size;
   }
 
   getNPlayers() {
-    return this.state.globes.size;
+    return this.nPlayers;
   }
 
   addListeners(socket: Socket) {
@@ -377,28 +417,42 @@ export default class Game {
     this.state.globes.get(id)?.updateSkill(skill);
   }
 
+  unWatch(id: string) {
+    this.watchers.delete(id);
+  }
+
   //Returns true if 0 players left
   leave(id: string) {
+    if (!this.state.globes.has(id)) return;
     const player = this.state.globes.get(id) as Player;
 
-    if (!player) return false;
     //Remove game listeners
-    player.socket.off('resize', this.resizeListener);
+    player.socket?.off('resize', this.resizeListener);
 
-    player.socket.off('keydown', this.keydownListener);
+    player.socket?.off('keydown', this.keydownListener);
 
-    player.socket.off('keyup', this.keyupListener);
+    player.socket?.off('keyup', this.keyupListener);
 
-    player.socket.off('mousemove', this.mousemoveListener);
+    player.socket?.off('mousemove', this.mousemoveListener);
 
-    player.socket.off('mousedown', this.mousedownListener);
+    player.socket?.off('mousedown', this.mousedownListener);
 
-    player.socket.off('mouseup', this.mouseupListener);
+    player.socket?.off('mouseup', this.mouseupListener);
 
-    player.socket.off('skill', this.skillListener);
+    player.socket?.off('skill', this.skillListener);
 
     this.state.globes.delete(id);
+    this.nPlayers--;
+  }
 
-    return this.state.globes.size === 0;
+  isDead() {
+    return this.nPlayers === 0 && this.watchers.size === 0;
+  }
+
+  kill() {
+    if (this.isDead()) {
+      clearInterval(this.updateInterval);
+      clearInterval(this.leaderboardInterval);
+    }
   }
 }

@@ -1,9 +1,9 @@
-import { isAABB, isOutOfMap } from '../utils';
+import { isAABB, isInTriangle, isOutOfMap } from '../utils';
 import Point from './point';
 import Vector from './vector';
 import Wall from './wall';
 
-export default class Blob {
+export default abstract class Blob {
   constructor(
     position: Point,
     size: number,
@@ -23,8 +23,9 @@ export default class Blob {
   color: string;
 
   isValidPosition(walls: Wall[]) {
+    if (isOutOfMap(this)) return false;
     for (const wall of walls) {
-      if (isAABB(this, wall) || isOutOfMap(this)) {
+      if (isAABB(this, wall)) {
         return false;
       }
     }

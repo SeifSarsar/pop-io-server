@@ -11,15 +11,12 @@ import Wall from './wall';
 
 export default class Bot extends Globe {
   constructor(id: string, username: string, state: State) {
-    super(id, username, state, 900, 900);
+    super(null, id, username, state, 900, 900);
   }
 
   targetEnergy: Energy | null = null;
   targetGlobe: Globe | null = null;
-
-  emit() {}
-  resize() {}
-
+  //GO toward center of map if energies are not visible!!!
   levelUp(): void {
     if (this.lvl === this.MAX_LEVEL) return;
 
@@ -40,6 +37,9 @@ export default class Bot extends Globe {
   getNearbyObjects() {
     const bullets = this.state.bullets.filter((b: Bullet) => this.canSee(b));
     const energies = this.state.energies.filter((e: Energy) => this.canSee(e));
+
+    //Pick random energie if no energies are nearby
+    if (energies.length === 0) energies.push(this.state.energies[0]);
 
     const walls = this.state.walls
       .filter((w: Wall) => this.canSeeWall(w))
@@ -257,10 +257,6 @@ export default class Bot extends Globe {
   setTargetEnergy(energies: Energy[]) {
     if (this.targetEnergy && energies.includes(this.targetEnergy)) return;
 
-    this.targetEnergy = null;
-
-    if (energies.length > 0) {
-      this.targetEnergy = energies[Math.round(Math.random() * energies.length)];
-    }
+    this.targetEnergy = energies[Math.round(Math.random() * energies.length)];
   }
 }

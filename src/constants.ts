@@ -1,5 +1,7 @@
 export const GAME_DIMENSION = 4000;
 export const GAME_CAPACITY = 40;
+export const GAME_BOT_CAPACITY = 20;
+
 export const GLOBE_SIZE = 25;
 export const GLOBE_MASS = 1;
 export const WALL_MASS = 1;
@@ -16,6 +18,16 @@ export const GLOBE_COLORS = [
   ['rgba(19, 60, 172, 1)', 'rgba(19, 60, 172, 0.5)'],
   ['rgba(83, 15, 173, 1)', 'rgba(83, 15, 173, 0.5)'],
   ['rgba(255, 0, 102, 1)', 'rgba(255, 0, 102, 0.5)'],
+  ['rgba(255, 81, 84,1)', 'rgba(255, 81, 84, 0.5)'],
+  ['rgba(250, 185, 5, 1)', 'rgba(250, 185, 5, 0.5)'],
+  ['rgba(255, 5, 5, 1)', 'rgba(255, 5, 5, 0.5)'],
+  ['rgba(255, 250, 5, 1)', 'rgba(255, 250, 5, 0.5)'],
+  ['rgba(95, 255, 5, 1)', 'rgba(95, 255, 5, 0.5)'],
+  ['rgba(5, 250, 205, 1)', 'rgba(5, 250, 205, 0.5)'],
+  ['rgba(5, 170, 250, 1)', 'rgba(5, 170, 250, 0.5)'],
+  ['rgba(5, 5, 250, 1)', 'rgba(5, 5, 250, 0.5)'],
+  ['rgba(150, 0, 235, 1)', 'rgba(150, 0, 235, 0.5)'],
+  ['rgba(255, 5, 220, 1)', 'rgba(255, 5, 220, 0.5)'],
 ];
 
 export const ENERGY_COLORS = [
@@ -52,7 +64,29 @@ export const TRIANGLE_WALL_SIZE = 250;
 
 export const DECELERATION = 0.8;
 
-export const BOT_NAMES = ['crado', 'strpkownu', 'TooFast', 'poppah'];
+export const BOT_NAMES = [
+  'pretzol',
+  'gangsta',
+  'TooFast',
+  'poppah',
+  'shakilloatmeal',
+  'badKarma',
+  'dycky123',
+  'bobba',
+  'PleaseNo',
+  'Ronaldo17',
+  'KOBEEF',
+  'COVID-19',
+  'DontDoiT',
+  'SugarPoppy',
+  'Milkyshake',
+  'Drake',
+  'Bubbly',
+  'run',
+  'X019W17',
+  'bAnAnAl',
+  'maypelSyrup',
+];
 
 export const BOT_AIM_ANGLE_OFFSET = 0.26;
 

@@ -1,6 +1,6 @@
 import { BULLET_SIZE } from '../constants';
 import Blob from './blob';
-import { isAABB, isCollision } from '../utils';
+import { isAABB, isCollision, isInTriangle, isOutOfMap } from '../utils';
 import Wall from './wall';
 import Point from './point';
 import Vector from './vector';
@@ -19,6 +19,20 @@ export default class Bullet extends Blob {
   lifeTimeout: NodeJS.Timeout;
   isDying = false;
   opacity = 1;
+
+  isValidPosition(walls: Wall[]) {
+    if (isOutOfMap(this)) return false;
+
+    for (const wall of walls) {
+      if (
+        (wall.corners.length === 4 && isAABB(this, wall)) ||
+        (wall.corners.length === 3 && isInTriangle(this, wall))
+      )
+        return false;
+    }
+
+    return true;
+  }
 
   checkBulletCollision(bullets: Bullet[]) {
     bullets.forEach((bullet) => {

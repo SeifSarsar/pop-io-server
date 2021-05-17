@@ -23,11 +23,12 @@ import State from '../state';
 import Point from './point';
 import Vector from './vector';
 import Splash from './splash';
-import Player from './player';
 import Edge from './edge';
+import { Socket } from 'socket.io';
 
 export default abstract class Globe extends Blob {
   constructor(
+    socket: Socket | null,
     id: string,
     username: string,
     state: State,
@@ -41,6 +42,7 @@ export default abstract class Globe extends Blob {
       ),
       GLOBE_SIZE
     );
+    this.socket = socket;
     this.id = id;
     this.username = username;
 
@@ -65,6 +67,7 @@ export default abstract class Globe extends Blob {
 
   readonly MAX_LEVEL = 15;
 
+  socket: Socket | null;
   id: string;
   borderColor: string;
   state: State;
@@ -99,10 +102,13 @@ export default abstract class Globe extends Blob {
   lvl = 1;
   points = 0;
 
-  abstract emit(event: string, data?: any): void;
-  abstract resize(width: number, height: number): void;
   abstract update(): boolean;
   abstract levelUp(): void;
+
+  resize(width: number, height: number) {
+    this.screenWidth = width;
+    this.screenHeight = height;
+  }
 
   updateGlobe(
     nearbyGlobes: Globe[],
@@ -337,7 +343,7 @@ export default abstract class Globe extends Blob {
     this.isDead = true;
     this.isShooting = false;
 
-    if (this instanceof Player) this.socket.emit('die');
+    this.socket?.emit('die');
 
     clearTimeout(this.reloadTimeout);
 
@@ -345,22 +351,16 @@ export default abstract class Globe extends Blob {
 
     const globe = this.state.globes.get(bullet.globeId);
 
-    if (globe) globe.getKill(this);
-
+    if (globe) {
+      if (globe.isDead) {
+        globe.socket?.emit('kill', `You have popped yourself!`);
+      } else {
+        globe.addGlobeXP(this);
+        globe.socket?.emit('kill', `You have popped ${this.username}!`);
+      }
+    }
     this.state.splashes.push(new Splash(this));
     this.size = 0;
-  }
-
-  getKill(globe: Globe) {
-    //globe: Killed globe
-    if (this.isDead) return;
-
-    if (this.id === globe.id) {
-      this.emit('kill');
-      return;
-    }
-    this.addGlobeXP(globe);
-    this.emit('kill', globe.username);
   }
 
   bounce(direction: Vector) {
@@ -411,7 +411,7 @@ export default abstract class Globe extends Blob {
         this.bulletLife += 400;
         break;
     }
-    this.emit('usePoint', this.points);
+    this.socket?.emit('level', this.points);
   }
 
   serialize() {

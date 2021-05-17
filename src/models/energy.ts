@@ -4,6 +4,7 @@ import { EnergySize } from '../enum';
 import Wall from './wall';
 import Point from './point';
 import Globe from './globe';
+import { isAABB, isOutOfMap } from '../utils';
 
 export default class Energy extends Blob {
   constructor(id: number, walls: Wall[]) {

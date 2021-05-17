@@ -1,11 +1,8 @@
 import Bullet from './bullet';
-
-import Blob from './blob';
 import Energy from './energy';
 import Wall from './wall';
 import { Socket } from 'socket.io';
 import State from '../state';
-import Edge from './edge';
 import Splash from './splash';
 import Globe from './globe';
 
@@ -17,14 +14,8 @@ export default class Player extends Globe {
     screenHeight: number,
     state: State
   ) {
-    super(socket.id, username, state, screenWidth, screenHeight);
+    super(socket, socket.id, username, state, screenWidth, screenHeight);
     this.socket = socket;
-  }
-
-  socket: Socket;
-
-  emit(event: string, data?: any) {
-    this.socket.emit(event, data);
   }
 
   getNearbyObjects() {
@@ -49,7 +40,7 @@ export default class Player extends Globe {
 
   update() {
     const state = this.getNearbyObjects();
-    this.emit(
+    this.socket?.emit(
       'update',
       this.createUpdate(
         state.globes,
@@ -61,7 +52,7 @@ export default class Player extends Globe {
     );
 
     this.updateGlobe(state.globes, state.bullets, state.energies, state.walls);
-    return false;
+    return this.isDead;
   }
 
   createUpdate(
@@ -81,11 +72,6 @@ export default class Player extends Globe {
     };
   }
 
-  resize(width: number, height: number) {
-    this.screenWidth = width;
-    this.screenHeight = height;
-  }
-
   levelUp(): void {
     if (this.lvl === this.MAX_LEVEL) return;
 
@@ -98,11 +84,11 @@ export default class Player extends Globe {
 
     const xpLeft = this.getTotalXPByLevel(this.lvl) - this.xp;
     const xpByLevel = this.getXPByLevel(this.lvl);
-
-    this.emit('xp', {
-      lvl: this.lvl,
-      barPercent: Math.floor((100 * (xpByLevel - xpLeft)) / xpByLevel),
-      points: this.points,
-    });
+    this.socket?.emit(
+      'level',
+      this.points,
+      this.lvl,
+      Math.floor((100 * (xpByLevel - xpLeft)) / xpByLevel)
+    );
   }
 }
