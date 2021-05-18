@@ -42,7 +42,7 @@ export default class Lobby {
   create() {
     const roomId = this.nRooms.toString();
     const game = new Game();
-    game.addBots(0);
+    game.addBots(GAME_BOT_CAPACITY);
     this.games.set(roomId, game);
     this.nRooms++;
     return roomId;
