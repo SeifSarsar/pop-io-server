@@ -1,7 +1,6 @@
 import { createServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import Lobby from './lobby';
-import GameHandler from './lobby';
 const port = process.env.PORT || 3000;
 
 const server = createServer();

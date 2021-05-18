@@ -75,20 +75,21 @@ export default class Player extends Globe {
   levelUp(): void {
     if (this.lvl === this.MAX_LEVEL) return;
 
-    if (this.xp > this.getTotalXPByLevel(this.lvl)) {
+    if (this.xp >= this.getTotalXPByLevel(this.lvl)) {
       //level up
       const nextLevel = this.getLevelByTotalXP(this.xp);
       this.points += nextLevel - this.lvl;
       this.lvl = nextLevel;
     }
-
     const xpLeft = this.getTotalXPByLevel(this.lvl) - this.xp;
     const xpByLevel = this.getXPByLevel(this.lvl);
+
+    const barValue = Math.floor((100 * (xpByLevel - xpLeft)) / xpByLevel);
     this.socket?.emit(
       'level',
       this.points,
       this.lvl,
-      Math.floor((100 * (xpByLevel - xpLeft)) / xpByLevel)
+      barValue === 100 ? 0 : barValue
     );
   }
 }

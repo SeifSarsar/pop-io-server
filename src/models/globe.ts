@@ -340,27 +340,27 @@ export default abstract class Globe extends Blob {
   die(bullet: Bullet) {
     if (this.isDead) return;
 
-    this.isDead = true;
-    this.isShooting = false;
-
-    this.socket?.emit('die');
-
+    bullet.die();
     clearTimeout(this.reloadTimeout);
 
-    bullet.die();
+    this.isDead = true;
+    this.isShooting = false;
+    this.size = 0;
+
+    this.state.splashes.push(new Splash(this));
 
     const globe = this.state.globes.get(bullet.globeId);
+    if (!globe) return;
 
-    if (globe) {
-      if (globe.isDead) {
-        globe.socket?.emit('kill', `You have popped yourself!`);
-      } else {
-        globe.addGlobeXP(this);
-        globe.socket?.emit('kill', `You have popped ${this.username}!`);
-      }
+    if (this.id === globe.id) this.socket?.emit('die', this.xp, this.kills);
+    else this.socket?.emit('die', this.xp, this.kills, globe.username);
+
+    if (globe.isDead) {
+      globe.socket?.emit('kill', `You have popped yourself!`);
+    } else {
+      globe.addGlobeXP(this);
+      globe.socket?.emit('kill', `You have popped ${this.username}!`);
     }
-    this.state.splashes.push(new Splash(this));
-    this.size = 0;
   }
 
   bounce(direction: Vector) {
@@ -436,7 +436,6 @@ export default abstract class Globe extends Blob {
     };
   }
 
-  ///////////////
   usePoint() {
     this.points = this.points === 0 ? 0 : this.points - 1;
   }
