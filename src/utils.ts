@@ -11,6 +11,7 @@ export function scalar(v1: Vector, v2: Vector) {
 export function distanceBlob(obj1: Blob, obj2: Blob) {
   const dX = Math.abs(obj1.position.x - obj2.position.x);
   const dY = Math.abs(obj1.position.y - obj2.position.y);
+
   return Math.sqrt(dX * dX + dY * dY) - obj2.size - obj1.size;
 }
 
@@ -83,15 +84,5 @@ export function getBounceDirection(obj: Blob, normal: Vector) {
   speed.substract(u);
   speed.substract(u);
 
-  //speed.setLength(1);
   return speed;
 }
-
-// export function getClosestBlob(obj:Blob, blobs:Blob[]){
-//   const minDistance = 99999;
-//   const closestBlob = null;
-//   blobs.forEach((blob)=>{
-//     distance(obj,blob);
-//     if ()
-//   })
-// }

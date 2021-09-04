@@ -6,19 +6,29 @@ import Point from './point';
 import Vector from './vector';
 
 export default class Bullet extends Blob {
-  constructor(globeId: string, position: Point, speed: Vector, life: number) {
+  constructor(
+    globeId: string,
+    globeUsername: string,
+    position: Point,
+    speed: Vector,
+    life: number
+  ) {
     super(position, BULLET_SIZE, speed);
 
     this.globeId = globeId;
+    this.globeUsername = globeUsername;
     this.lifeTimeout = setTimeout(() => {
       this.die();
     }, life);
   }
 
   globeId: string;
+  globeUsername: string;
+
   lifeTimeout: NodeJS.Timeout;
   isDying = false;
   opacity = 1;
+  lastBounceTime: number = 0;
 
   isValidPosition(walls: Wall[]) {
     if (isOutOfMap(this)) return false;
@@ -56,27 +66,35 @@ export default class Bullet extends Blob {
   }
 
   checkWallCollision(walls: Wall[]) {
-    let bounceDirection: Vector | null = null;
     walls.forEach((wall) => {
-      if (
-        (wall.edges.length > 1 && isAABB(this, wall)) ||
-        (wall.edges.length === 1 && wall.edges[0].isIntersect(this))
-      ) {
-        bounceDirection = wall.getBounceDirectionEdge(this);
-        if (bounceDirection) {
-          bounceDirection.setLength(this.speed.getLength());
-          this.speed = bounceDirection;
-          return;
+      if (wall.edges.length > 1 && isAABB(this, wall)) {
+        if (
+          wall.edges.length === 4 ||
+          (wall.edges.length === 3 && isInTriangle(this, wall))
+        ) {
+          this.bounce(wall);
         }
-
-        bounceDirection = wall.getBounceDirectionCorner(this);
-        if (bounceDirection) {
-          bounceDirection.setLength(this.speed.getLength());
-          this.speed = bounceDirection;
-          return;
-        }
+      } else if (wall.edges[0].isIntersect(this)) {
+        this.bounce(wall);
       }
     });
+  }
+
+  bounce(wall: Wall) {
+    let bounceDirection: Vector | null = null;
+    bounceDirection = wall.getBounceDirectionEdge(this);
+    if (bounceDirection) {
+      bounceDirection.setLength(this.speed.getLength());
+      this.speed = bounceDirection;
+      return;
+    }
+
+    bounceDirection = wall.getBounceDirectionCorner(this);
+    if (bounceDirection) {
+      bounceDirection.setLength(this.speed.getLength());
+      this.speed = bounceDirection;
+      return;
+    }
   }
 
   update(bullets: Bullet[], walls: Wall[]) {

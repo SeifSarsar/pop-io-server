@@ -1,4 +1,4 @@
-import { isAABB, isInTriangle, isOutOfMap } from '../utils';
+import { isAABB, isOutOfMap } from '../utils';
 import Point from './point';
 import Vector from './vector';
 import Wall from './wall';

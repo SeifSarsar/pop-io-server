@@ -1,4 +1,8 @@
-import { BOT_AIM_ANGLE_OFFSET, BOT_AIM_SPEED } from '../constants';
+import {
+  BOT_AIM_ANGLE_OFFSET,
+  BOT_AIM_SPEED,
+  BOT_SCREEN_SIZE,
+} from '../constants';
 import { Skill } from '../enum';
 import State from '../state';
 import { distancePoint, scalar } from '../utils';
@@ -11,7 +15,7 @@ import Wall from './wall';
 
 export default class Bot extends Globe {
   constructor(id: string, username: string, state: State) {
-    super(null, id, username, state, 900, 900);
+    super(null, id, username, state, BOT_SCREEN_SIZE, BOT_SCREEN_SIZE);
   }
 
   targetEnergy: Energy | null = null;
@@ -66,6 +70,7 @@ export default class Bot extends Globe {
       walls,
     };
   }
+
   update() {
     if (this.isDead === false) {
       const state = this.getNearbyObjects();

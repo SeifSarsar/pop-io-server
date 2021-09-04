@@ -1,10 +1,9 @@
-import { ENERGY_COLORS, GAME_DIMENSION } from '../constants';
+import { GAME_DIMENSION } from '../constants';
 import Blob from './blob';
 import { EnergySize } from '../enum';
 import Wall from './wall';
 import Point from './point';
 import Globe from './globe';
-import { isAABB, isOutOfMap } from '../utils';
 
 export default class Energy extends Blob {
   constructor(id: number, walls: Wall[]) {
@@ -33,8 +32,9 @@ export default class Energy extends Blob {
     this.isInflate = false;
     this.initialSize = this.size;
     this.id = id;
-    this.color =
-      ENERGY_COLORS[Math.round(Math.random() * (ENERGY_COLORS.length - 1))];
+
+    this.color = `hsla(${Math.round(Math.random() * 360)}, 100%, 65%, 1)`;
+
     this.SIZE_LIMIT_RATE = 1.2;
 
     this.target = null;
@@ -52,6 +52,7 @@ export default class Energy extends Blob {
     this.target = globe;
   }
 
+  //Fix energies speed when close and perfect deflection
   update() {
     if (this.target) {
       if (this.target.isDead) {

@@ -1,7 +1,11 @@
+import {
+  uniqueNamesGenerator,
+  names,
+  NumberDictionary,
+} from 'unique-names-generator';
 import { Direction, Skill } from './enum';
 import { Socket } from 'socket.io';
 import {
-  BOT_NAMES,
   GAME_BOT_CAPACITY,
   GAME_DIMENSION,
   N_ENERGY,
@@ -349,7 +353,11 @@ export default class Game {
   addBots(n: number) {
     for (let i = 0; i < n; i++) {
       const id = (Date.now() + i).toString();
-      const username = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+      const username = uniqueNamesGenerator({
+        dictionaries: [names, NumberDictionary.generate()],
+        separator: '',
+        style: 'lowerCase',
+      });
       const bot = new Bot(id, username, this.state);
       this.state.globes.set(id, bot);
     }

@@ -47,7 +47,6 @@ export default class Edge {
     }
 
     const projVectorLength = projVector.getLength();
-
     //Pythagore
     return Math.sqrt(
       objVectorLength * objVectorLength - projVectorLength * projVectorLength

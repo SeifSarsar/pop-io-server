@@ -1,4 +1,3 @@
-import Bot from './models/bot';
 import Bullet from './models/bullet';
 import Energy from './models/energy';
 import Globe from './models/globe';

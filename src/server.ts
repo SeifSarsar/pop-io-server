@@ -7,7 +7,8 @@ const server = createServer();
 server.listen(port);
 console.log(`Server listening on port ${port}`);
 
-const clientURL = 'https://pop-io-client.herokuapp.com';
+const clientURL = 'https://spacepop.io';
+//const clientURL = 'https://pop-io-client.herokuapp.com';
 //const clientURL = 'http://localhost:8080';
 const io = new Server(server, {
   cors: {

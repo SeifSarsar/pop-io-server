@@ -5,14 +5,14 @@ import {
   GLOBE_RELOAD,
   GLOBE_SIZE,
   GLOBE_SPEED,
-  DECELERATION,
+  GLOBE_DECELERATION,
   BULLET_LIFE,
-  SHIELD_OFFSET,
-  SHIELD_SIZE,
-  GLOBE_COLORS,
-  BULLET_SHOOT_OFFSET,
-  DEFLECT_OFFSET,
-  DEATH_OFFSET,
+  GLOBE_SHIELD_OFFSET,
+  GLOBE_SHIELD_SIZE,
+  GLOBE_SHOOT_OFFSET,
+  GLOBE_DEFLECT_OFFSET,
+  GLOBE_DEATH_OFFSET,
+  GLOBE_SHIELD_MARGIN,
 } from '../constants';
 import Blob from './blob';
 import Energy from './energy';
@@ -51,11 +51,10 @@ export default abstract class Globe extends Blob {
     this.screenWidth = screenWidth;
     this.screenHeight = screenHeight;
 
-    const colors =
-      GLOBE_COLORS[Math.round(Math.random() * (GLOBE_COLORS.length - 1))];
+    const hue = Math.round(Math.random() * 360);
 
-    this.borderColor = colors[0];
-    this.color = colors[1];
+    this.borderColor = `hsla(${hue}, 100%, 65%, 1)`;
+    this.color = `hsla(${hue}, 100%, 65%, 0.5)`;
 
     while (!this.isValidPosition(this.state.walls)) {
       this.position.x = Math.round(Math.random() * GAME_DIMENSION);
@@ -75,13 +74,13 @@ export default abstract class Globe extends Blob {
   acceleration = new Vector(0, 0);
   mouseVector = new Vector(GLOBE_SIZE, 0);
 
-  shieldSize = SHIELD_SIZE;
+  shieldSize = GLOBE_SHIELD_SIZE;
   speedLimit = GLOBE_SPEED;
   bulletSpeed = BULLET_SPEED;
   reloadTime = GLOBE_RELOAD;
   bulletLife = BULLET_LIFE;
 
-  shieldOffset = SHIELD_OFFSET;
+  shieldOffset = GLOBE_SHIELD_OFFSET;
 
   isShooting = false;
   isReloading = false;
@@ -224,7 +223,7 @@ export default abstract class Globe extends Blob {
       this.mouseVector.dY
     );
 
-    bulletDirection.setLength(BULLET_SHOOT_OFFSET);
+    bulletDirection.setLength(GLOBE_SHOOT_OFFSET);
     const bulletPosition = new Point(this.position.x, this.position.y);
     bulletPosition.add(bulletDirection);
 
@@ -232,6 +231,7 @@ export default abstract class Globe extends Blob {
 
     const bullet = new Bullet(
       this.id,
+      this.username,
       bulletPosition,
       bulletDirection,
       this.bulletLife
@@ -252,7 +252,8 @@ export default abstract class Globe extends Blob {
       }
 
       if (this.shieldOffset === 12) isIncreasing = false;
-      else if (this.shieldOffset === SHIELD_OFFSET) clearInterval(interval);
+      else if (this.shieldOffset === GLOBE_SHIELD_OFFSET)
+        clearInterval(interval);
     }, 10);
   }
 
@@ -263,11 +264,11 @@ export default abstract class Globe extends Blob {
 
   applyFriction() {
     if (this.acceleration.dX === 0 && Math.abs(this.speed.dX) > 0) {
-      this.speed.dX *= DECELERATION;
+      this.speed.dX *= GLOBE_DECELERATION;
       if (Math.abs(this.speed.dX) < 0.2) this.speed.dX = 0;
     }
     if (this.acceleration.dY === 0 && Math.abs(this.speed.dY) > 0) {
-      this.speed.dY *= DECELERATION;
+      this.speed.dY *= GLOBE_DECELERATION;
       if (Math.abs(this.speed.dY) < 0.2) this.speed.dY = 0;
     }
   }
@@ -291,12 +292,12 @@ export default abstract class Globe extends Blob {
     bullets.forEach((bullet) => {
       if (bullet.isDead || this.isDead) return;
       const dist = distanceBlob(this, bullet);
-      if (dist <= DEFLECT_OFFSET) {
+      if (dist <= GLOBE_DEFLECT_OFFSET) {
         if (this.isInvincible) {
           bullet.die();
         } else {
           //Globe dead
-          if (dist < DEATH_OFFSET) {
+          if (dist < GLOBE_DEATH_OFFSET) {
             this.die(bullet);
             return;
           }
@@ -306,10 +307,9 @@ export default abstract class Globe extends Blob {
             bullet.position.x - this.position.x
           );
 
-          //O.2 is shield margin to deflect bullet
           if (
-            bulletAngle >= this.shieldStart - 0.2 &&
-            bulletAngle <= this.shieldEnd + 0.2
+            bulletAngle >= this.shieldStart - GLOBE_SHIELD_MARGIN &&
+            bulletAngle <= this.shieldEnd + GLOBE_SHIELD_MARGIN
           ) {
             this.deflectBullet(bullet);
           }
@@ -320,18 +320,27 @@ export default abstract class Globe extends Blob {
 
   deflectBullet(bullet: Bullet) {
     bullet.globeId = this.id;
+    bullet.globeUsername = this.username;
     bullet.speed.setX(this.mouseVector.dX);
     bullet.speed.setY(this.mouseVector.dY);
     bullet.speed.setLength(BULLET_SPEED);
+
+    const bounceDirection = new Vector(
+      -this.mouseVector.dX,
+      -this.mouseVector.dY
+    );
+    bounceDirection.setLength(1);
+    this.bounce(bounceDirection);
   }
 
   checkEnergyCollision(nearbyEnergies: Energy[]) {
     nearbyEnergies.forEach((energy) => {
-      if (distanceBlob(this, energy) <= SHIELD_OFFSET) {
+      const dist = distanceBlob(this, energy);
+      if (dist <= 0) {
         this.addEnergyXP(energy);
         const newEnergy = new Energy(energy.id, this.state.walls);
         this.state.energies[energy.id] = newEnergy;
-      } else if (distanceBlob(this, energy) <= SHIELD_OFFSET) {
+      } else if (dist <= GLOBE_DEFLECT_OFFSET) {
         energy.setTarget(this);
       }
     });
@@ -349,15 +358,15 @@ export default abstract class Globe extends Blob {
 
     this.state.splashes.push(new Splash(this));
 
+    if (this.id === bullet.globeId) {
+      this.socket?.emit('die', this.xp, this.kills);
+      return;
+    }
+
+    this.socket?.emit('die', this.xp, this.kills, bullet.globeUsername);
+
     const globe = this.state.globes.get(bullet.globeId);
-    if (!globe) return;
-
-    if (this.id === globe.id) this.socket?.emit('die', this.xp, this.kills);
-    else this.socket?.emit('die', this.xp, this.kills, globe.username);
-
-    if (globe.isDead) {
-      globe.socket?.emit('kill', `You have popped yourself!`);
-    } else {
+    if (globe) {
       globe.addGlobeXP(this);
       globe.socket?.emit('kill', `You have popped ${this.username}!`);
     }
@@ -400,7 +409,7 @@ export default abstract class Globe extends Blob {
         this.shieldEnd += 0.05;
         break;
       case Skill.Speed:
-        this.speedLimit += 0.2;
+        this.speedLimit += 0.15;
         break;
 
       case Skill.Reload:
@@ -408,7 +417,7 @@ export default abstract class Globe extends Blob {
         break;
 
       case Skill.Bullet:
-        this.bulletLife += 400;
+        this.bulletLife += 600;
         break;
     }
     this.socket?.emit('level', this.points);
